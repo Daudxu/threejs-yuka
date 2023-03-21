@@ -368,3 +368,8 @@ vue@^3.2.47:
     "@vue/runtime-dom" "3.2.47"
     "@vue/server-renderer" "3.2.47"
     "@vue/shared" "3.2.47"
+
+yuka@^0.7.8:
+  version "0.7.8"
+  resolved "https://registry.npmmirror.com/yuka/-/yuka-0.7.8.tgz#5297c2d8c36e6e6bbe24c6119522cbc2a8dd8dd7"
+  integrity sha512-G/pFcMZh2Azz7Yy500NSV1jQ0Ru7h9hTNyEW+HjRXcdzjJIyp/3mCGspnx7VJVP06zxORqK6mkl5TywLqVUnVg==
