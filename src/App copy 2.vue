@@ -58,7 +58,6 @@ onMounted (()=>{
     plane.receiveShadow = true;
     plane.rotation.x = -Math.PI / 2;
     plane.position.y = -0.5;
-    plane.updateMatrixWorld()
     scene.add(plane);
     //创建灯光
     const light = new THREE.SpotLight(0xffffff, 1, 100, Math.PI / 6, 0.5);
@@ -105,32 +104,33 @@ onMounted (()=>{
     const entityManager = new YUKA.EntityManager();
     entityManager.add(vehicle)
     entityManager.add(target)
-
-    // 到达行为
-    const arriveBehavior = new YUKA.ArriveBehavior(target.position, 3);
-    vehicle.steering.add(arriveBehavior);
-
-    const ndc = new THREE.Vector2();
-    const raycaster = new THREE.Raycaster();
-    // projector = new THREE.Projector();
-    // Mesh.updateMatrixWorld();
+    setInterval(()=>{
+      target.position.set(Math.random() * 20 - 10, 0, Math.random() * 20 - 10)
+    }, 3000)
+    // 搜索目标
+    const seekBehavior = new YUKA.SeekBehavior(target.position)
+    vehicle.steering.add(seekBehavior)
     
-    window.addEventListener("pointerdown",(event)=>{
-      ndc.x =( event.clientX / window.innerWidth ) * 2 - 1;
-      ndc.y = -( event.clientY / window.innerHeight ) * 2 + 1;
-      console.log('ndc', ndc);
-      raycaster.setFromCamera(ndc, camera);
-    
-      // const intersects = raycaster.intersectObject(plane);
-      const intersects = raycaster.intersectObjects( scene.children, true );  
-      console.log(intersects)
-      if(intersects.length > 0){
-        const point = intersects[0].point;
-        console.log(point)
-        target.position.set(point.x, 0, point.z)
-        // target.position.copy(point)
-      }
-    })
+
+    // showPath(path)
+    // function showPath(path){
+    //   console.log(path)
+    //   const positions = [];
+    //   for (let i = 0; i<path._waypoints.length; i++) {
+    //     positions.push(path._waypoints[i].x, path._waypoints[i].y, path._waypoints[i].z)
+    //   }
+    //   const geometry = new THREE.BufferGeometry();
+    //   geometry.setAttribute(
+    //     "position",
+    //     new THREE.Float32BufferAttribute(positions, 3)
+    //   );
+    //   const material = new THREE.LineBasicMaterial({
+    //     color:0x0000ff
+    //   });
+    //   const line = new THREE.Line(geometry, material)
+    //   scene.add(line)
+    // }
+
     const time = new YUKA.Time();
     function animate() {
       const delta = time.update().getDelta();

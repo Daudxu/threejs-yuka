@@ -58,7 +58,6 @@ onMounted (()=>{
     plane.receiveShadow = true;
     plane.rotation.x = -Math.PI / 2;
     plane.position.y = -0.5;
-    plane.updateMatrixWorld()
     scene.add(plane);
     //创建灯光
     const light = new THREE.SpotLight(0xffffff, 1, 100, Math.PI / 6, 0.5);
@@ -86,51 +85,50 @@ onMounted (()=>{
         renderComponent.position.copy(entity.position);
         renderComponent.quaternion.copy(entity.rotation);
       }
-    // 创建目标小球
-    const sphereGeometry = new THREE.SphereGeometry(0.2, 32, 32);
-    const sphereMateial = new THREE.MeshStandardMaterial({
-      color: 0xff00ff
-    })
-    const sphere = new THREE.Mesh(sphereGeometry, sphereMateial);
-    sphere.receiveShadow = true;
-    sphere.castShadow = true;
-    scene.add(sphere)
+    // 创建矩阵
+    const path = new YUKA.Path();
+    path.add(new YUKA.Vector3(0, 0, 0));
+    path.add(new YUKA.Vector3(0, 0, 10));
+    path.add(new YUKA.Vector3(10, 0, 10));
+    path.add(new YUKA.Vector3(10, 0, 0));
+    path.add(new YUKA.Vector3(0, 0, 0));
+    // 设置循环模式
+    path.loop = true
+    // 将路径当前的位置设置为车辆位置
+    vehicle.position.copy(path.current());
 
-    // 创建目标
-    const target = new YUKA.GameEntity();
-    target.setRenderComponent(sphere, callback)
-    target.position.set(Math.random() * 20 - 10, 0, Math.random() * 20 - 10)
-  
+    // 路径跟随
+    const follw = new YUKA.FollowPathBehavior(path)
+    vehicle.steering.add(follw)
     
+    // 保持路径中的行为
+    const onPathBehavior = new YUKA.OnPathBehavior(path, 0.1);
+    onPathBehavior.weight = 10;
+    vehicle.steering.add(onPathBehavior)
+     
+    // 创建对实体管理的对象
     const entityManager = new YUKA.EntityManager();
     entityManager.add(vehicle)
-    entityManager.add(target)
 
-    // 到达行为
-    const arriveBehavior = new YUKA.ArriveBehavior(target.position, 3);
-    vehicle.steering.add(arriveBehavior);
-
-    const ndc = new THREE.Vector2();
-    const raycaster = new THREE.Raycaster();
-    // projector = new THREE.Projector();
-    // Mesh.updateMatrixWorld();
-    
-    window.addEventListener("pointerdown",(event)=>{
-      ndc.x =( event.clientX / window.innerWidth ) * 2 - 1;
-      ndc.y = -( event.clientY / window.innerHeight ) * 2 + 1;
-      console.log('ndc', ndc);
-      raycaster.setFromCamera(ndc, camera);
-    
-      // const intersects = raycaster.intersectObject(plane);
-      const intersects = raycaster.intersectObjects( scene.children, true );  
-      console.log(intersects)
-      if(intersects.length > 0){
-        const point = intersects[0].point;
-        console.log(point)
-        target.position.set(point.x, 0, point.z)
-        // target.position.copy(point)
+    showPath(path)
+    function showPath(path){
+      console.log(path)
+      const positions = [];
+      for (let i = 0; i<path._waypoints.length; i++) {
+        positions.push(path._waypoints[i].x, path._waypoints[i].y, path._waypoints[i].z)
       }
-    })
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(positions, 3)
+      );
+      const material = new THREE.LineBasicMaterial({
+        color:0x0000ff
+      });
+      const line = new THREE.Line(geometry, material)
+      scene.add(line)
+    }
+
     const time = new YUKA.Time();
     function animate() {
       const delta = time.update().getDelta();

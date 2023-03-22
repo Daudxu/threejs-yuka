@@ -127,8 +127,8 @@ onMounted (()=>{
       if(intersects.length > 0){
         const point = intersects[0].point;
         console.log(point)
-        target.position.set(point.x, 0, point.z)
-        // target.position.copy(point)
+        // target.position.set(point.x, 0, point.z)
+        target.position.copy(point)
       }
     })
     const time = new YUKA.Time();
