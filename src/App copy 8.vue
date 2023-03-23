@@ -74,31 +74,18 @@ onMounted (()=>{
     // cone.matrixAutoUpdate = false;
     cone.receiveShadow = true;
     cone.castShadow = true;
-    scene.rotation.y = Math.PI / 2;
-    // scene.scale.set() = Math.PI / 2;
-    const entityManager = new YUKA.EntityManager();
-    const vehicle = new YUKA.Vehicle();
-    vehicle.maxSpeed = 4
-    vehicle.position.set(Math.random() * 10 - 5, 0, Math.random() * 10 - 5 )
-    vehicle.setRenderComponent(cone, callback);
-    entityManager.add(vehicle);
-
     scene.add(cone);
-    //创建物体
-    const coneGeometry1 = new THREE.ConeGeometry(0.2, 1, 32);
-    coneGeometry1.rotateX(Math.PI / 2);
-    const coneMaterial1 = new THREE.MeshStandardMaterial({color:0xff0000});
-    const cone1 = new THREE.Mesh(coneGeometry1, coneMaterial1);
-    // cone.matrixAutoUpdate = false;
-    cone1.receiveShadow = true;
-    cone1.castShadow = true;
-    cone1.position.set(1, 0, 1)
-    const vehicle2 = new YUKA.Vehicle();
-    vehicle2.maxSpeed = 10
-    vehicle2.position.set(Math.random() * 10 - 5, 0, Math.random() * 10 - 5 )
-    vehicle2.setRenderComponent(cone1, callback);
-    entityManager.add(vehicle2);
-    scene.add(cone1);
+
+    // 创建YUKA的车
+    const vehicle = new YUKA.Vehicle();
+    vehicle.maxSpeed = 5
+    // 设置渲染对象
+    vehicle.setRenderComponent(cone, callback);
+    function callback(entity, renderComponent){
+        // renderComponent.matrix.copy(entity.worldMatrix)
+        renderComponent.position.copy(entity.position);
+        renderComponent.quaternion.copy(entity.rotation);
+      }
     // 创建目标小球
     const sphereGeometry = new THREE.SphereGeometry(0.2, 32, 32);
     const sphereMateial = new THREE.MeshStandardMaterial({
@@ -108,45 +95,74 @@ onMounted (()=>{
     sphere.receiveShadow = true;
     sphere.castShadow = true;
     scene.add(sphere)
+
     // 创建目标
     const target = new YUKA.GameEntity();
     target.setRenderComponent(sphere, callback)
-    target.position.set(Math.random() * 50 - 10, 0, Math.random() * 50 - 10)
- 
-
-    // 追击行为
-    const pursuitBehavior = new YUKA.PursuitBehavior(vehicle2, 5)
-    vehicle.steering.add(pursuitBehavior)
-
-    // 设置目的地
-    const arriveBehavior = new YUKA.ArriveBehavior(target.position)
-    vehicle2.steering.add(arriveBehavior)
-
-    setInterval(() => {
-      target.position.set(Math.random() * 10 - 5, 0, Math.random() * 10 - 5)
-    }, 3000);
-
-    // 创建YUKA的车
-    // const vehicle = new YUKA.Vehicle();
-    // vehicle.maxSpeed = 5
-    // 设置渲染对象
-    vehicle.setRenderComponent(cone, callback);
-    function callback(entity, renderComponent){
-        // renderComponent.matrix.copy(entity.worldMatrix)
-        renderComponent.position.copy(entity.position);
-        renderComponent.quaternion.copy(entity.rotation);
-      }
-
-
-
+    target.position.set(Math.random() * 20 - 10, 0, Math.random() * 20 - 10)
   
     
-  
-    // entityManager.add(vehicle)
+    const entityManager = new YUKA.EntityManager();
+    entityManager.add(vehicle)
     entityManager.add(target)
-   
 
-  
+    // 到达行为
+    // const arriveBehavior = new YUKA.ArriveBehavior(target.position, 3);
+    // vehicle.steering.add(arriveBehavior);
+
+    const ndc = new THREE.Vector2();
+    const raycaster = new THREE.Raycaster();
+    // projector = new THREE.Projector();
+    // Mesh.updateMatrixWorld();
+    // 点击前往
+    window.addEventListener("pointerdown",(event)=>{
+      ndc.x =( event.clientX / window.innerWidth ) * 2 - 1;
+      ndc.y = -( event.clientY / window.innerHeight ) * 2 + 1;
+      console.log('ndc', ndc);
+      raycaster.setFromCamera(ndc, camera);
+    
+      // const intersects = raycaster.intersectObject(plane);
+      const intersects = raycaster.intersectObjects( scene.children, true );  
+      console.log(intersects)
+      if(intersects.length > 0){
+        const point = intersects[0].point;
+        console.log(point)
+        target.position.set(point.x, 0, point.z)
+        // target.position.copy(point)
+      }
+    })
+
+    // 障碍物品
+    const obstacles = [];
+    for(let i = 0; i < 5; i++) {
+       const boxGeometry = new THREE.BoxGeometry(3,3,3);
+       const boxMaterial = new THREE.MeshStandardMaterial({
+        color: 0x00ff00
+       });
+       const box = new THREE.Mesh(boxGeometry, boxMaterial);
+       box.position.set(Math.random() * 30 - 15, 1.5, Math.random() * 30 - 5);
+       box.receiveShadow = true;
+       box.castShadow = true;
+       scene.add(box);
+       // 创建障碍物
+       const obstacle = new YUKA.GameEntity();
+       obstacle.position.copy(box.position);
+       // 设置障碍我半径
+       boxGeometry.computeBoundingSphere();
+       obstacle.boundingRadius = boxGeometry.boundingSphere.radius;
+       obstacles.push(obstacle)
+       entityManager.add(obstacle)
+
+      }
+    // 避障
+    const obstacleAvoidanceBehavior = new YUKA.ObstacleAvoidanceBehavior(obstacles)
+    vehicle.steering.add(obstacleAvoidanceBehavior)
+    vehicle.smoother = new YUKA.Smoother(30)
+
+    // 逃离障碍
+    const fleeBehavior = new YUKA.FleeBehavior(target.position, 1)
+    vehicle.steering.add(fleeBehavior)
+
     const time = new YUKA.Time();
     function animate() {
       const delta = time.update().getDelta();
