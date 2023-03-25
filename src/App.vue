@@ -82,7 +82,7 @@ onMounted (()=>{
     vehicle.position.set(Math.random() * 10 - 5, 0, Math.random() * 10 - 5 )
     vehicle.setRenderComponent(cone, callback);
     entityManager.add(vehicle);
-
+  
     scene.add(cone);
     //创建物体
     const coneGeometry1 = new THREE.ConeGeometry(0.2, 1, 32);
@@ -136,11 +136,6 @@ onMounted (()=>{
         renderComponent.position.copy(entity.position);
         renderComponent.quaternion.copy(entity.rotation);
       }
-
-
-
-  
-    
   
     // entityManager.add(vehicle)
     entityManager.add(target)
